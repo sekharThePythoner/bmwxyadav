@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMW M5 | Neat & Nuclear</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Variables and Base Styling */
+        :root {
+            --color-charcoal: #0f1113;
+            --color-black: #000;
+            --color-cyan: #00FFFF;
+            --color-ember: #ff6b4a;
+            --font-headline: 'Orbitron', sans-serif;
+            --font-body: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--color-charcoal);
+            font-family: var(--font-body);
+            color: white;
+            scroll-behavior: smooth;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-headline);
+            color: white;
+        }
+
+        /* Utility for Neon Glow (Restrained) */
+        .neon-text-sm {
+            text-shadow: 0 0 1px var(--color-cyan), 0 0 4px var(--color-cyan);
+            color: var(--color-cyan);
+        }
+        .neon-border {
+            border: 1px solid var(--color-cyan);
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5), inset 0 0 2px rgba(0, 255, 255, 0.5);
+        }
+        .ember-highlight {
+            text-shadow: 0 0 1px var(--color-ember), 0 0 4px var(--color-ember);
+            color: var(--color-ember);
+        }
+
+        /* Fullscreen Video/Overlay Setup */
+        .fullscreen-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 50; /* Above main content */
+            transition: opacity 1s ease-in-out;
+        }
+
+        /* Parallax/HUD Container */
+        #hero-media-container {
+            /* Positioned relative to enable subtle movement of its children */
+            position: relative;
+            overflow: hidden;
+        }
+        #hero-media {
+            will-change: transform;
+            transition: transform 0.1s linear; /* Subtle visual transition */
+        }
+        
+        /* Modal Backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Scrollbar styling for a 'clean' look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: var(--color-cyan); border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: var(--color-charcoal); }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. INTRO VIDEO ELEMENT (Hidden until 'Play' is clicked) -->
+    <div id="video-container" class="fullscreen-container hidden">
+        <video id="intro-video" class="w-full h-full object-cover" preload="auto" poster="https://placehold.co/1920x1080/0f1113/00ffff?text=BMW+M5+Cinematic+View" playsinline>
+            <!-- Mock asset paths -->
+            <source src="https://mock-cdn.com/bmw_drift_4s.mp4" type="video/mp4">
+            <p class="text-white p-4">Your browser does not support the video tag. Please skip intro.</p>
+        </video>
+        <!-- Skip Button during video -->
+        <button id="skip-intro" class="absolute top-4 right-4 text-sm font-semibold text-white/70 hover:text-white transition duration-200 z-50 p-2 rounded-lg bg-black/50">SKIP INTRO</button>
+    </div>
+
+    <!-- 2. PLAY-TO-UNLOCK OVERLAY (Initial state) -->
+    <div id="preloader-overlay" class="fullscreen-container flex flex-col justify-center items-center bg-[var(--color-black)]">
+        <div class="text-center p-8 rounded-xl">
+            <h1 class="text-4xl md:text-6xl font-black mb-6 tracking-wider" style="font-family: var(--font-headline);">
+                PROJECT <span class="neon-text-sm">M5</span>
+            </h1>
+            <p class="text-lg text-white/70 mb-10">A high-fidelity experience awaits. Restrained motion, maximum impact.</p>
+            <button id="play-button" class="px-10 py-4 text-xl font-bold rounded-xl transition duration-300 transform hover:scale-[1.03] active:scale-100 bg-black/30 neon-border" style="font-family: var(--font-headline);">
+                <span class="neon-text-sm">PLAY</span> EXPERIENCE
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. MAIN SITE CONTENT (Hidden initially, revealed after video) -->
+    <div id="main-content" class="min-h-screen pt-16 opacity-0 transition-opacity duration-1000" style="background-color: var(--color-charcoal);">
+        
+        <!-- Header & Controls -->
+        <header class="fixed top-0 left-0 right-0 z-40 p-4 bg-[var(--color-charcoal)]/90 backdrop-blur-sm border-b border-white/10">
+            <div class="max-w-6xl mx-auto flex justify-between items-center">
+                <h2 class="text-2xl font-bold neon-text-sm" style="font-family: var(--font-headline);">M5 // FURY</h2>
+                <div class="flex space-x-4">
+                    <button id="mute-button" class="text-white/70 hover:text-white transition" aria-label="Mute sound">
+                        <svg id="volume-high-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.899a9 9 0 010 12.728M5 12H3m0 0l2-2m-2 2l2 2m7-2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <svg id="volume-mute-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15.414L10 11m0 0l4-4m-4 4l-4-4m4 4l4 4m-4-4v2m0 0V9m0-2V4m-2 4h4m-4 4h4m-4 4h4m-2 2a4 4 0 100-8 4 4 0 000 8z"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- SPEED HUD (Scroll-based) -->
+        <div class="fixed top-16 left-0 right-0 z-30 h-1 bg-white/5">
+            <div id="speed-hud" class="h-full bg-[var(--color-cyan)] transition-width duration-100" style="width: 0%;"></div>
+        </div>
+
+        <main class="max-w-6xl mx-auto p-4 md:p-8">
+
+            <!-- HERO SECTION -->
+            <section id="hero-section" class="pt-8 md:pt-16 mb-20 md:mb-32">
+                <div class="grid md:grid-cols-2 gap-10 items-center">
+                    
+                    <!-- Left: Stats Panel -->
+                    <div class="md:order-2 space-y-4">
+                        <h1 class="text-5xl lg:text-7xl font-black leading-tight mb-6" style="font-family: var(--font-headline);">
+                            <span class="neon-text-sm">THE</span> FINAL DRIFT.
+                        </h1>
+                        <p class="text-white/70 max-w-md mb-8">
+                            A focused machine. Every system is optimized for precise, high-g control. Less chaos, more sting.
+                        </p>
+
+                        <!-- Stat Bar -->
+                        <div class="p-6 rounded-xl bg-black/30 border border-white/10 space-y-4 shadow-2xl">
+                            <h3 class="text-xl tracking-wider text-white/80" style="font-family: var(--font-headline);">CURRENT SPEC</h3>
+                            <div class="flex justify-between border-b border-cyan/20 pb-2">
+                                <span class="text-white/70">Mode:</span>
+                                <span class="neon-text-sm font-semibold">TRACK/AWD</span>
+                            </div>
+                            <div class="flex justify-between border-b border-cyan/20 pb-2">
+                                <span class="text-white/70">Horsepower:</span>
+                                <span class="ember-highlight font-semibold">627 <span class="text-xs">HP</span></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-white/70">Top Speed:</span>
+                                <span class="text-white font-semibold">305 <span class="text-xs">KPH</span></span>
+                            </div>
+                        </div>
+
+                        <!-- CTA -->
+                        <a href="#" class="inline-block mt-6 px-8 py-3 text-lg font-bold rounded-xl bg-[var(--color-cyan)] text-black transition duration-300 transform hover:bg-white hover:shadow-[0_0_15px_rgba(0,255,255,0.7)]" style="font-family: var(--font-headline);">
+                            JOIN WAITLIST
+                        </a>
+                    </div>
+
+                    <!-- Right: Framed Hero Media (Parallax target) -->
+                    <div id="hero-media-container" class="md:order-1 rounded-2xl overflow-hidden aspect-video shadow-[0_0_30px_rgba(0,0,0,0.8)] neon-border bg-black/50">
+                        <video id="hero-media" class="w-full h-full object-cover rounded-2xl" autoplay muted loop playsinline>
+                            <!-- Use MP4 for efficiency over GIF -->
+                            <source src="https://mock-cdn.com/bmw_m5_drift_loop.mp4" type="video/mp4">
+                            <!-- Fallback image -->
+                            <img src="https://placehold.co/1280x720/0f1113/00ffff?text=BMW+M5+Drift" alt="BMW M5 Drifting" class="w-full h-full object-cover">
+                        </video>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FEATURE SECTIONS -->
+            <h2 class="text-4xl font-bold mb-12 text-center pt-20" style="font-family: var(--font-headline);">ADVANCED <span class="neon-text-sm">SYSTEMS</span></h2>
+
+            <div class="space-y-12">
+                <!-- Data for sections -->
+                <div id="section-data" data-sections='[
+                    {"title": "AI Features", "subtitle": "Adaptive Drive Intelligence", "color": "cyan"},
+                    {"title": "Engine Mechanics", "subtitle": "S63 V8 TwinPower Turbo", "color": "ember"},
+                    {"title": "Drift Science", "subtitle": "The Art of Controlled Oversteer", "color": "cyan"},
+                    {"title": "Road Safety", "subtitle": "Proactive Collision Matrix", "color": "ember"},
+                    {"title": "Turbo Guide", "subtitle": "Sequential Boost Mapping", "color": "cyan"}
+                ]'></div>
+
+            </div>
+            
+            <!-- SECTION PLACEHOLDERS -->
+            <section id="features-container" class="space-y-12 pb-32">
+                <!-- Sections will be injected here by JS -->
+            </section>
+            
+        </main>
+
+        <!-- MODAL FOR DETAILED CONTENT -->
+        <div id="modal-overlay" class="fixed inset-0 modal-backdrop hidden justify-center items-center p-4 z-50 transition-opacity duration-300 opacity-0" onclick="closeModal()">
+            <div class="w-full max-w-3xl p-8 rounded-xl bg-[var(--color-charcoal)] border border-white/10 shadow-2xl relative" onclick="event.stopPropagation()">
+                <button onclick="closeModal()" class="absolute top-4 right-4 text-white/70 hover:text-[var(--color-cyan)] transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <h3 id="modal-title" class="text-3xl font-bold mb-4 neon-text-sm" style="font-family: var(--font-headline);"></h3>
+                <p id="modal-subtitle" class="text-sm text-white/70 mb-6"></p>
+                <div id="modal-content" class="text-white space-y-4">
+                    <!-- Detailed content for the modal -->
+                    <p>The **[Feature Title]** system utilizes a proprietary neural network to analyze driving conditions 1,000 times per second. This allows for proactive adjustments to the damper, steering ratio, and power delivery, creating a symbiotic connection between the driver and the machine.</p>
+                    <p class="text-white/50 text-sm">-- Detailed explanation and simulated animated diagram (not implemented) would live here. --</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- CONSTANTS AND CONFIGURATION ---
+        const CYAN = '#00FFFF';
+        const EMBER = '#ff6b4a';
+        const CHARCOAL = '#0f1113';
+
+        // Mock Assets
+        const ENGINE_SOUND_URL = 'https://mock-cdn.com/engine_start.mp3';
+        const VIDEO_LENGTH_MS = 4500; // Simulating a 4.5s video
+
+        // --- DOM ELEMENTS ---
+        const preloaderOverlay = document.getElementById('preloader-overlay');
+        const playButton = document.getElementById('play-button');
+        const introVideo = document.getElementById('intro-video');
+        const videoContainer = document.getElementById('video-container');
+        const skipIntroButton = document.getElementById('skip-intro');
+        const mainContent = document.getElementById('main-content');
+        const heroMedia = document.getElementById('hero-media');
+        const speedHud = document.getElementById('speed-hud');
+        const muteButton = document.getElementById('mute-button');
+        const volumeHighIcon = document.getElementById('volume-high-icon');
+        const volumeMuteIcon = document.getElementById('volume-mute-icon');
+        const featuresContainer = document.getElementById('features-container');
+        const sectionDataElement = document.getElementById('section-data');
+
+        // --- STATE MANAGEMENT ---
+        let isMuted = true;
+        let isIntroPlaying = false;
+        let isMainSiteRevealed = false;
+        let audioContext;
+        let audioBuffer;
+        
+        // --- AUDIO FUNCTIONS ---
+        
+        /**
+         * Loads the engine start sound using Web Audio API for a precise sting.
+         */
+        async function loadEngineSound() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const response = await fetch(ENGINE_SOUND_URL);
+                const arrayBuffer = await response.arrayBuffer();
+                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                console.log('Audio buffer loaded.');
+            } catch (e) {
+                console.error('Error loading audio:', e);
+                // Fallback: Use simple HTML Audio element if Web Audio API fails
+                if (!audioContext) {
+                    audioContext = {
+                        state: 'closed',
+                        resume: () => console.log('Mock AudioContext resume'),
+                        createBufferSource: () => ({ start: () => console.log('Mock Audio Sting Played') })
+                    };
+                }
+            }
+        }
+
+        /**
+         * Plays the engine sound sting once.
+         */
+        function playEngineSting() {
+            if (isMuted) return;
+
+            if (audioContext && audioBuffer) {
+                // Ensure audio context is running (required for modern browsers)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                source.start(0); // Play immediately
+                console.log('Engine sting played.');
+            } else {
+                console.warn('Audio not ready or muted.');
+            }
+        }
+
+        /**
+         * Toggles the global mute state and UI.
+         */
+        function toggleMute() {
+            isMuted = !isMuted;
+            
+            // Mute/Unmute video and UI
+            introVideo.muted = isMuted;
+            heroMedia.muted = isMuted;
+
+            if (isMuted) {
+                volumeHighIcon.classList.add('hidden');
+                volumeMuteIcon.classList.remove('hidden');
+                console.log('Muted.');
+            } else {
+                volumeHighIcon.classList.remove('hidden');
+                volumeMuteIcon.classList.add('hidden');
+                console.log('Unmuted.');
+            }
+        }
+        
+        // --- UX FLOW / EVENT HANDLERS ---
+        
+        /**
+         * The primary gate logic when the user clicks 'Play'.
+         */
+        function handlePlayClick() {
+            if (isIntroPlaying) return;
+            isIntroPlaying = true;
+
+            // 1. Hide overlay
+            preloaderOverlay.style.opacity = '0';
+
+            // 2. Show video container and play
+            setTimeout(() => {
+                preloaderOverlay.classList.add('hidden');
+                videoContainer.classList.remove('hidden');
+                introVideo.play().catch(e => {
+                    console.error("Video playback failed, likely due to auto-play restrictions:", e);
+                    // Fallback to skipping intro if video fails to start
+                    revealMainSite();
+                });
+                
+                // 3. Play sound sting (user gesture required, which the click provides)
+                playEngineSting(); 
+            }, 1000); // Wait for fade-out
+
+            // 4. Set listener for video end
+            introVideo.onended = revealMainSite;
+        }
+
+        /**
+         * Skips the intro video and reveals the main site immediately.
+         */
+        function skipIntro() {
+             if (!isMainSiteRevealed) {
+                introVideo.pause();
+                revealMainSite();
+             }
+        }
+
+        /**
+         * Smoothly transitions from the intro video to the main site.
+         */
+        function revealMainSite() {
+            if (isMainSiteRevealed) return;
+            isMainSiteRevealed = true;
+            
+            // 1. Hide video container
+            videoContainer.style.opacity = '0';
+            setTimeout(() => {
+                videoContainer.classList.add('hidden');
+            }, 1000);
+
+            // 2. Reveal main content with a fade
+            mainContent.classList.remove('opacity-0');
+            
+            // 3. Start listeners for scroll effects
+            window.addEventListener('scroll', handleScroll, { passive: true });
+            handleScroll(); // Initial call to set state
+
+            console.log('Main site revealed.');
+        }
+
+        // --- ANIMATION & SCROLL LOGIC ---
+        
+        /**
+         * Handles scroll events for HUD and Parallax effects.
+         */
+        function handleScroll() {
+            if (!isMainSiteRevealed) return;
+
+            const scrollY = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+
+            if (docHeight === 0) return;
+
+            // 1. Speed HUD Fill (0% to 100% based on scroll)
+            // Capped scroll percentage for effect:
+            const scrollPercent = Math.min(1, scrollY / docHeight);
+            speedHud.style.width = `${scrollPercent * 100}%`;
+
+            // 2. Subtle Parallax on Hero Media (Move up 5px max)
+            const parallaxShift = Math.min(5, scrollY * 0.05); // Max 5px shift
+            heroMedia.style.transform = `translateY(${parallaxShift}px)`;
+            
+            // 3. Section Reveal (using Tailwind's hidden/visible on scroll) - Simplified CSS-friendly approach
+            // For a 'meaningful' animation, we'll check section visibility
+            const sections = featuresContainer.querySelectorAll('.feature-section');
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                const isVisible = rect.top < window.innerHeight - 100;
+
+                if (isVisible) {
+                    section.classList.remove('opacity-0', 'translate-y-10');
+                    section.classList.add('opacity-100', 'translate-y-0');
+                }
+            });
+        }
+        
+        // --- MODAL / SECTION LOGIC ---
+        
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalSubtitle = document.getElementById('modal-subtitle');
+        const modalContent = document.getElementById('modal-content');
+
+        /**
+         * Opens the detail modal for a given feature.
+         * @param {string} title - The main title of the feature.
+         * @param {string} subtitle - The subtitle of the feature.
+         * @param {string} color - The accent color ('cyan' or 'ember').
+         */
+        function openModal(title, subtitle, color) {
+            const accentClass = color === 'ember' ? 'ember-highlight' : 'neon-text-sm';
+
+            modalTitle.textContent = title;
+            modalTitle.className = `text-3xl font-bold mb-4 ${accentClass}`;
+            modalSubtitle.textContent = subtitle;
+            modalContent.innerHTML = `
+                <p>The **${title}** system is the result of years of iterative engineering, focusing on achieving precise control and maximum power density.</p>
+                <div class="mt-6 p-4 rounded-lg bg-black/50 border border-white/10">
+                    <h4 class="text-xl font-semibold mb-2" style="font-family: var(--font-headline);">Technical Deep Dive</h4>
+                    <ul class="list-disc list-inside space-y-1 text-white/80">
+                        <li><strong>Latency:</strong> <span class="${accentClass}">Sub-millisecond</span> processing time.</li>
+                        <li><strong>Integration:</strong> Seamless chassis and powertrain synchronization.</li>
+                        <li><strong>Data Stream:</strong> Over 100 telemetry channels analyzed in real-time.</li>
+                    </ul>
+                </div>
+                <p class="text-white/70 text-sm mt-6">Use the detailed data above to inform your setup. The goal is surgical precision.</p>
+            `;
+            
+            modalOverlay.classList.remove('hidden', 'opacity-0');
+            modalOverlay.classList.add('flex', 'opacity-100');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        /**
+         * Closes the detail modal.
+         */
+        function closeModal() {
+            modalOverlay.classList.remove('flex', 'opacity-100');
+            modalOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                modalOverlay.classList.add('hidden');
+            }, 300);
+            document.body.style.overflow = 'auto'; // Re-enable background scrolling
+        }
+
+
+        /**
+         * Renders the interactive feature sections.
+         */
+        function renderFeatureSections() {
+            try {
+                const sectionsData = JSON.parse(sectionDataElement.dataset.sections);
+                sectionsData.forEach(item => {
+                    const colorClass = item.color === 'ember' ? 'ember-highlight' : 'neon-text-sm';
+                    const hoverBorder = item.color === 'ember' ? 'hover:border-[var(--color-ember)]' : 'hover:border-[var(--color-cyan)]';
+                    
+                    const sectionHtml = `
+                        <div class="feature-section p-6 md:p-8 rounded-xl bg-black/30 border border-white/10 transition duration-500 opacity-0 translate-y-10 hover:shadow-2xl ${hoverBorder} cursor-pointer" 
+                             onclick="openModal('${item.title}', '${item.subtitle}', '${item.color}')">
+                            <h3 class="text-3xl font-bold mb-1 ${colorClass}" style="font-family: var(--font-headline);">${item.title}</h3>
+                            <p class="text-white/70">${item.subtitle}</p>
+                            <span class="inline-block mt-4 text-xs font-semibold uppercase tracking-wider text-white/50 border-b border-white/50">Details</span>
+                        </div>
+                    `;
+                    featuresContainer.innerHTML += sectionHtml;
+                });
+            } catch (e) {
+                console.error("Failed to parse section data:", e);
+            }
+        }
+        
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            // Setup Listeners
+            playButton.addEventListener('click', handlePlayClick);
+            muteButton.addEventListener('click', toggleMute);
+            skipIntroButton.addEventListener('click', skipIntro);
+
+            // Pre-load assets
+            loadEngineSound();
+            
+            // Set initial mute state and UI
+            if (isMuted) {
+                introVideo.muted = true;
+                heroMedia.muted = true;
+            }
+            
+            // Render the feature sections dynamically
+            renderFeatureSections();
+
+            // Set initial CSS for hidden elements
+            mainContent.classList.add('opacity-0');
+            videoContainer.style.opacity = '1';
+        };
+
+        // Initialize with Muted UI
+        document.addEventListener('DOMContentLoaded', () => {
+             toggleMute(); // Sets initial UI to Muted, which is the default
+        });
+        
+    </script>
+
+</body>
+</html>
